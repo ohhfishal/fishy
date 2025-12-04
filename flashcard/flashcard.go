@@ -10,9 +10,11 @@ import (
 )
 
 type Flashcard struct {
-	Header      string `json:"header,omitempty"`
-	Description string `json:"description,omitempty"`
-	Origin      string `json:"origin"`
+	Header       string   `json:"header,omitempty"`
+	Description  string   `json:"description,omitempty"`
+	AIOverview   []string `json:"ai_overview,omitempty"`
+	Origin       string   `json:"origin"`
+	ClassContext string   `json:"class_context"`
 }
 
 type FlashcardsArgs struct {

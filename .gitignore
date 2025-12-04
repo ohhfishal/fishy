@@ -10,5 +10,5 @@ devenv.local.yaml
 .pre-commit-config.yaml
 
 # Default outputs
-out.fish
+out.json
 fishy

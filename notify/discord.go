@@ -16,16 +16,20 @@ import (
 
 type DiscordCMD struct {
 	Webhook      string       `arg:"" required:"" help:"Discord webhook to send message to."`
-	File         *os.File     `default:"out.fish" help:"Fish file to load flashscard from."`
+	File         string       `default:"out.json" type:"existingfile" help:"Fish file to load flashscard from."`
 	EmbedOptions EmbedOptions `embed:"" group:"Embed Options"`
 	DryRun       bool         `help:"Don't send the message and print it to stdout instead."`
 }
 
 func (config *DiscordCMD) Run(ctx context.Context, logger *slog.Logger) error {
-	defer config.File.Close()
+	file, err := os.Open(config.File)
+	if err != nil {
+		return fmt.Errorf("opening file %s: %w", config.File, err)
+	}
+	defer file.Close()
 
 	var cards []flashcard.Flashcard
-	decoder := json.NewDecoder(config.File)
+	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&cards); err != nil {
 		return fmt.Errorf("reading file: %w", err)
 	}
@@ -34,11 +38,10 @@ func (config *DiscordCMD) Run(ctx context.Context, logger *slog.Logger) error {
 
 	selected := cards[rand.Int()%len(cards)]
 	embed := Embed(selected, config.EmbedOptions)
+	slog.Info("sending", "embed", embed)
 	if config.DryRun {
-		fmt.Println(embed)
 		return nil
 	}
-	slog.Info("sending", "embed", embed)
 	if err := embed.Post(config.Webhook); err != nil {
 		return fmt.Errorf("could not post embed: %v: %w", embed, err)
 	}
@@ -54,6 +57,24 @@ type EmbedOptions struct {
 }
 
 func Embed(card flashcard.Flashcard, opts EmbedOptions) discord.Embed {
+	fields := []discord.Field{
+		{
+			Name:  "Source",
+			Value: card.Origin,
+		},
+	}
+	if card.ClassContext != "" {
+		fields = append(fields, discord.Field{
+			Name:  "Textbook",
+			Value: card.ClassContext,
+		})
+	}
+	if len(card.AIOverview) > 0 {
+		fields = append(fields, discord.Field{
+			Name:  "AI Summary",
+			Value: ConvertToBullets(card.AIOverview),
+		})
+	}
 	return discord.Embed{
 		Content: strings.Join(opts.Mentions, " "),
 		Messages: []discord.Message{
@@ -61,16 +82,19 @@ func Embed(card flashcard.Flashcard, opts EmbedOptions) discord.Embed {
 				Title:       card.Header,
 				Description: fmt.Sprintf("|| %s ||", card.Description),
 				Color:       0x5865F2,
-				Fields: []discord.Field{
-					{
-						Name:  "Source",
-						Value: card.Origin,
-					},
-				},
+				Fields:      fields,
 				Footer: discord.Footer{
 					Text: fmt.Sprintf("fishy %s • %s", version.Version(), version.Repo),
 				},
 			},
 		},
 	}
+}
+
+func ConvertToBullets(lines []string) string {
+	var builder strings.Builder
+	for _, line := range lines {
+		builder.WriteString(fmt.Sprintf("- || %s ||\n", line))
+	}
+	return strings.TrimSpace(builder.String())
 }

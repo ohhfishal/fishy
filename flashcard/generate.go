@@ -11,7 +11,7 @@ import (
 
 type GenerateCMD struct {
 	File       []byte         `arg:"" type:"filecontent" help:"YAML file describing terms to make flashcards of."`
-	Output     string         `short:"o" default:"out.fish" type:"path" help:"File to write to."`
+	Output     string         `short:"o" default:"out.json" type:"path" help:"File to write to."`
 	Flashcards FlashcardsArgs `embed:""`
 }
 
@@ -36,7 +36,10 @@ func (config *GenerateCMD) Run(ctx context.Context, logger *slog.Logger) error {
 					if err != nil {
 						errs = append(errs, fmt.Errorf("wikipedia: %w", err))
 					} else {
-						flashcards = append(flashcards, wikipedia...)
+						for _, card := range wikipedia {
+							card.ClassContext = fmt.Sprintf("Chapter: %d", chapter.Number)
+							flashcards = append(flashcards, card)
+						}
 					}
 				}
 			}
@@ -52,12 +55,13 @@ func (config *GenerateCMD) Run(ctx context.Context, logger *slog.Logger) error {
 	}
 
 	// Write to file
-	file, err := os.OpenFile(config.Output, os.O_WRONLY|os.O_CREATE, 0644)
+	file, err := os.OpenFile(config.Output, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return fmt.Errorf("opening output file: %w", err)
 	}
 
 	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(flashcards); err != nil {
 		return fmt.Errorf("writing to output: %w", err)
 	}
