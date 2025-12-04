@@ -11,6 +11,7 @@ import (
 
 	"github.com/ohhfishal/fishy/flashcard"
 	"github.com/ohhfishal/fishy/discord"
+	"github.com/ohhfishal/fishy/version"
 )
 
 
@@ -38,6 +39,7 @@ func (config *DiscordCMD) Run(ctx context.Context, logger *slog.Logger) error {
 		fmt.Println(embed)
 		return nil
 	}
+	slog.Info("sending", "embed", embed)
 	if err := embed.Post(config.Webhook); err != nil {
 		return fmt.Errorf("could not post embed: %v: %w", embed, err)
 	}
@@ -65,6 +67,9 @@ func Embed(card flashcard.Flashcard, opts EmbedOptions) discord.Embed {
 						Name:  "Source",
 						Value: card.Origin,
 					},
+				},
+				Footer: discord.Footer{
+					Text: fmt.Sprintf("fishy %s", version.Version()),
 				},
 			},
 		},

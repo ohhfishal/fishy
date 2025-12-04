@@ -20,11 +20,21 @@ type AllowedMentions struct {
 	Users []string `json:"users"`
 }
 
+type Footer struct {
+	Text string `json:"text"`
+}
+
+type Author struct {
+	Name string `json:"name"`
+}
+
 type Message struct {
 	Title  string         `json:"title"`
 	Description string `json:"description,omitzero"`
 	Color  int            `json:"color,omitzero"`
 	Fields []Field `json:"fields,omitempty"`
+	Footer Footer `json:"footer,omitzero"`
+	Author Author `json:"author,omitzero"`
 }
 
 type Field struct {
