@@ -3,6 +3,7 @@ package flashcard
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -26,30 +27,56 @@ type WikipediaClient struct {
 }
 
 func (client *WikipediaClient) CreateFlashcards(ctx context.Context, term Term) ([]Flashcard, error) {
-	if term.Wikipedia == "" {
+	if len(term.Wikipedia) == 0 {
 		return nil, fmt.Errorf("does not support wikipedia: %v", term)
-	} else if strings.Contains(term.Wikipedia, "#") {
-		return nil, fmt.Errorf("not implemented: headings: %s", term.Wikipedia)
 	}
 
-	response, err := client.Do("GET", fmt.Sprintf(FWikipediaSummaryLink, term.Wikipedia), nil)
+	var cards []Flashcard
+	var errs error
+	for _, article := range term.Wikipedia {
+		card, err := client.CreateFlashcard(ctx, article, term.Name)
+		errs = errors.Join(errs, err)
+		if card != nil {
+			cards = append(cards, *card)
+		}
+	}
+	return cards, errs
+}
+
+func (client *WikipediaClient) CreateFlashcard(ctx context.Context, article string, header string) (*Flashcard, error) {
+	var description string
+	if strings.Contains(article, "#") {
+		// TODO: Parse the actual html page
+		return nil, fmt.Errorf("not implemented: headings: %s", article)
+	} else {
+		summary, err := Get[WikipediaSummaryResponse](client, fmt.Sprintf(FWikipediaSummaryLink, article), nil)
+		if err != nil {
+			return nil, err
+		}
+		description = summary.Extract
+	}
+	return &Flashcard{
+		Header:      header,
+		Description: description,
+		Origin:      fmt.Sprintf(FWikipediaPageMarkdown, article),
+	}, nil
+}
+
+func Get[T any](client *WikipediaClient, url string, body any) (T, error) {
+	return Do[T](client, "GET", url, body)
+}
+func Do[T any](client *WikipediaClient, method string, url string, body any) (T, error) {
+	var parsed T
+	response, err := client.Do(method, url, body)
 	if err != nil {
-		return nil, err
+		return parsed, fmt.Errorf("requesting wikipedia: %w", err)
 	}
 	defer response.Body.Close()
 
-	var summary WikipediaSummaryResponse
-	if err := json.NewDecoder(response.Body).Decode(&summary); err != nil {
-		return nil, fmt.Errorf("reading body: %w", err)
+	if err := json.NewDecoder(response.Body).Decode(&parsed); err != nil {
+		return parsed, fmt.Errorf("reading body: %w", err)
 	}
-	// TODO: Parse the actual html page to get more cards
-	return []Flashcard{
-		{
-			Header:      term.Name,
-			Description: summary.Extract,
-			Origin:      fmt.Sprintf(FWikipediaPageMarkdown, term.Wikipedia),
-		},
-	}, nil
+	return parsed, nil
 }
 
 func (client *WikipediaClient) Do(method string, url string, body any) (*http.Response, error) {

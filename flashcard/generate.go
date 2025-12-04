@@ -5,8 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/goccy/go-yaml"
-	"io"
 	"log/slog"
 	"os"
 )
@@ -15,27 +13,6 @@ type GenerateCMD struct {
 	File       []byte         `arg:"" type:"filecontent" help:"YAML file describing terms to make flashcards of."`
 	Output     string         `short:"o" default:"out.fish" type:"path" help:"File to write to."`
 	Flashcards FlashcardsArgs `embed:""`
-}
-
-type root struct {
-	Textbooks []Textbook `json:"textbooks" yaml:"textbooks"`
-}
-
-type Textbook struct {
-	Name     string    `json:"name" yaml:"name"`
-	Subject  string    `json:"subject" yaml:"subject"`
-	Chapters []Chapter `json:"chapters" yaml:"chapters"`
-}
-
-type Chapter struct {
-	Number int    `json:"chapter" yaml"chapter"`
-	Terms  []Term `json:"terms" yaml:"terms"`
-}
-
-type Term struct {
-	Name      string   `json:"name" yaml:"name"`
-	Passages  []string `json:"passages,omitzero,omitempty" yaml:"passages"`
-	Wikipedia string   `json:"wikipedia,omitempty" yaml:"wikipedia"`
 }
 
 func (config *GenerateCMD) Run(ctx context.Context, logger *slog.Logger) error {
@@ -71,7 +48,7 @@ func (config *GenerateCMD) Run(ctx context.Context, logger *slog.Logger) error {
 		for _, err := range errs {
 			msgs = append(msgs, err.Error())
 		}
-		slog.Warn("got errors", "errs", msgs)
+		slog.Warn("got errors creating cards", "errs", msgs)
 	}
 
 	// Write to file
@@ -93,13 +70,4 @@ func NewFlashcardsFor(ctx context.Context, term Term, features FlashcardsArgs) (
 	var errs []error
 
 	return cards, errs
-}
-
-func ParseTextbooks(ctx context.Context, reader io.Reader) ([]Textbook, error) {
-	var root root
-	decoder := yaml.NewDecoder(reader, yaml.DisallowUnknownField())
-	if err := decoder.DecodeContext(ctx, &root); err != nil {
-		return nil, fmt.Errorf("parsing yaml: %w", err)
-	}
-	return root.Textbooks, nil
 }
