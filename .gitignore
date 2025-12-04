@@ -11,4 +11,4 @@ devenv.local.yaml
 
 # Default outputs
 out.json
-fishy
+fishy*

@@ -5,7 +5,7 @@ go 1.25.3
 require (
 	github.com/alecthomas/kong v1.13.0
 	github.com/goccy/go-yaml v1.19.0
-	github.com/ohhfishal/kong-help v0.2.1
+	github.com/ohhfishal/kong-help v0.3.2-0.20251204235659-56af6e8caa74
 )
 
 require (

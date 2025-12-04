@@ -12,6 +12,12 @@ github.com/ohhfishal/kong-help v0.2.0 h1:97JJIMCokWTOFKRw4NEXWlj32qKHZ4LPJl3naXq
 github.com/ohhfishal/kong-help v0.2.0/go.mod h1:Lp066tCWNYMYUZtc2MRtIOyXiJvsbH2u/N/zfeQ8arM=
 github.com/ohhfishal/kong-help v0.2.1 h1:P6mOwluFBBvdiy/MHcY0a6Wr3XCO18G688PSb35DW4I=
 github.com/ohhfishal/kong-help v0.2.1/go.mod h1:Lp066tCWNYMYUZtc2MRtIOyXiJvsbH2u/N/zfeQ8arM=
+github.com/ohhfishal/kong-help v0.3.0 h1:fsG6QOZarzic3QQ/0kdt+OJxsCu1bAaHZiQnev0o9rs=
+github.com/ohhfishal/kong-help v0.3.0/go.mod h1:Lp066tCWNYMYUZtc2MRtIOyXiJvsbH2u/N/zfeQ8arM=
+github.com/ohhfishal/kong-help v0.3.1 h1:AaeuyRb1EdAwhmpi2j5INmO4mdo5GV77zUWzxuzvDvk=
+github.com/ohhfishal/kong-help v0.3.1/go.mod h1:Lp066tCWNYMYUZtc2MRtIOyXiJvsbH2u/N/zfeQ8arM=
+github.com/ohhfishal/kong-help v0.3.2-0.20251204235659-56af6e8caa74 h1:K4kkHsVdKOzJKrQ1nQq1+RN3MrhtMEEnGNIELYArIA8=
+github.com/ohhfishal/kong-help v0.3.2-0.20251204235659-56af6e8caa74/go.mod h1:Lp066tCWNYMYUZtc2MRtIOyXiJvsbH2u/N/zfeQ8arM=
 golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.38.0 h1:3yZWxaJjBmCWXqhN1qh02AkOnCQ1poK6oF+a7xWL6Gc=
 golang.org/x/sys v0.38.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
