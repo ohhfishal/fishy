@@ -80,7 +80,7 @@ func Embed(card flashcard.Flashcard, opts EmbedOptions) discord.Embed {
 		Messages: []discord.Message{
 			{
 				Title:       card.Header,
-				Description: fmt.Sprintf("|| %s ||", card.Description),
+				Description: fmt.Sprintf("||%s||", card.Description),
 				Color:       0x5865F2,
 				Fields:      fields,
 				Footer: discord.Footer{
@@ -99,7 +99,7 @@ func Embed(card flashcard.Flashcard, opts EmbedOptions) discord.Embed {
 func ConvertToBullets(lines []string) string {
 	var builder strings.Builder
 	for _, line := range lines {
-		builder.WriteString(fmt.Sprintf("- || %s ||\n", line))
+		builder.WriteString(fmt.Sprintf("- ||%s||\n", line))
 	}
 	return strings.TrimSpace(builder.String())
 }
