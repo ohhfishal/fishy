@@ -9,17 +9,16 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ohhfishal/fishy/flashcard"
 	"github.com/ohhfishal/fishy/discord"
+	"github.com/ohhfishal/fishy/flashcard"
 	"github.com/ohhfishal/fishy/version"
 )
 
-
 type DiscordCMD struct {
-	Webhook string `arg:"" required:"" help:"Discord webhook to send message to."`
-	File *os.File `default:"out.fish" help:"Fish file to load flashscard from."`
+	Webhook      string       `arg:"" required:"" help:"Discord webhook to send message to."`
+	File         *os.File     `default:"out.fish" help:"Fish file to load flashscard from."`
 	EmbedOptions EmbedOptions `embed:"" group:"Embed Options"`
-	DryRun bool `help:"Don't send the message and print it to stdout instead."`
+	DryRun       bool         `help:"Don't send the message and print it to stdout instead."`
 }
 
 func (config *DiscordCMD) Run(ctx context.Context, logger *slog.Logger) error {
@@ -33,7 +32,7 @@ func (config *DiscordCMD) Run(ctx context.Context, logger *slog.Logger) error {
 
 	logger.Debug("read cards successfully", "total", len(cards))
 
-	selected := cards[rand.Int() % len(cards)]
+	selected := cards[rand.Int()%len(cards)]
 	embed := Embed(selected, config.EmbedOptions)
 	if config.DryRun {
 		fmt.Println(embed)
@@ -55,13 +54,13 @@ type EmbedOptions struct {
 }
 
 func Embed(card flashcard.Flashcard, opts EmbedOptions) discord.Embed {
-	return discord.Embed {
+	return discord.Embed{
 		Content: strings.Join(opts.Mentions, " "),
 		Messages: []discord.Message{
 			{
-				Title: card.Header,
+				Title:       card.Header,
 				Description: fmt.Sprintf("|| %s ||", card.Description),
-				Color: 0x5865F2,
+				Color:       0x5865F2,
 				Fields: []discord.Field{
 					{
 						Name:  "Source",
@@ -69,7 +68,7 @@ func Embed(card flashcard.Flashcard, opts EmbedOptions) discord.Embed {
 					},
 				},
 				Footer: discord.Footer{
-					Text: fmt.Sprintf("fishy %s", version.Version()),
+					Text: fmt.Sprintf("fishy %s • %s", version.Version(), version.Repo),
 				},
 			},
 		},

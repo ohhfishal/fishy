@@ -5,15 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"github.com/goccy/go-yaml"
 	"io"
 	"log/slog"
+	"os"
 )
 
 type GenerateCMD struct {
 	File       []byte         `arg:"" type:"filecontent" help:"YAML file describing terms to make flashcards of."`
-	Output string `short:"o" default:"out.fish" type:"path" help:"File to write to."`
+	Output     string         `short:"o" default:"out.fish" type:"path" help:"File to write to."`
 	Flashcards FlashcardsArgs `embed:""`
 }
 
@@ -84,7 +84,6 @@ func (config *GenerateCMD) Run(ctx context.Context, logger *slog.Logger) error {
 	if err := encoder.Encode(flashcards); err != nil {
 		return fmt.Errorf("writing to output: %w", err)
 	}
-
 
 	return nil
 }

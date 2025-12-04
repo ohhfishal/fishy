@@ -8,11 +8,10 @@ import (
 	"net/http"
 )
 
-
 type Embed struct {
-	Content  string           `json:"content,omitzero"`
+	Content         string          `json:"content,omitzero"`
 	AllowedMentions AllowedMentions `json:"allowed_mentions,omitzero"`
-	Messages []Message `json:"embeds,omitzero"`
+	Messages        []Message       `json:"embeds,omitzero"`
 }
 
 type AllowedMentions struct {
@@ -26,15 +25,16 @@ type Footer struct {
 
 type Author struct {
 	Name string `json:"name"`
+	Url  string `json:"url,omitzero"`
 }
 
 type Message struct {
-	Title  string         `json:"title"`
-	Description string `json:"description,omitzero"`
-	Color  int            `json:"color,omitzero"`
-	Fields []Field `json:"fields,omitempty"`
-	Footer Footer `json:"footer,omitzero"`
-	Author Author `json:"author,omitzero"`
+	Title       string  `json:"title"`
+	Description string  `json:"description,omitzero"`
+	Color       int     `json:"color,omitzero"`
+	Fields      []Field `json:"fields,omitempty"`
+	Footer      Footer  `json:"footer,omitzero"`
+	Author      Author  `json:"author,omitzero"`
 }
 
 type Field struct {

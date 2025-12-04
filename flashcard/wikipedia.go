@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	FWikipediaSummaryLink = "https://en.wikipedia.org/api/rest_v1/page/summary/%s"
+	FWikipediaSummaryLink  = "https://en.wikipedia.org/api/rest_v1/page/summary/%s"
 	FWikipediaPageMarkdown = "[wikipedia](https://en.wikipedia.org/wiki/%s)"
-	FUserAgent            = "Flashcard_Bot/0.1 (%s) github.com/ohhfishal/fishy/0.1"
+	FUserAgent             = "Flashcard_Bot/0.1 (%s) github.com/ohhfishal/fishy/0.1"
 )
 
 type WikipediaSummaryResponse struct {
@@ -47,7 +47,7 @@ func (client *WikipediaClient) CreateFlashcards(ctx context.Context, term Term) 
 		{
 			Header:      term.Name,
 			Description: summary.Extract,
-			Origin:      fmt.Sprintf(FWikipediaPageMarkdown , term.Wikipedia),
+			Origin:      fmt.Sprintf(FWikipediaPageMarkdown, term.Wikipedia),
 		},
 	}, nil
 }
