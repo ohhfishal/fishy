@@ -20,6 +20,13 @@ type WikipediaSummaryResponse struct {
 	Language string `json:"lang"`
 	Title    string `json:"title"`
 	Extract  string `json:"extract"`
+	Thumbnail Image `json:"thumbnail"`
+}
+
+type Image struct {
+	Source string `json:"source"`
+	Width int `json:"width"`
+	Height int `json:"height"`
 }
 
 type WikipediaClient struct {
@@ -45,6 +52,7 @@ func (client *WikipediaClient) CreateFlashcards(ctx context.Context, term Term) 
 
 func (client *WikipediaClient) CreateFlashcard(ctx context.Context, article string, header string) (*Flashcard, error) {
 	var description string
+	var thumbnail Image
 	if strings.Contains(article, "#") {
 		// TODO: Parse the actual html page
 		return nil, fmt.Errorf("not implemented: headings: %s", article)
@@ -54,11 +62,13 @@ func (client *WikipediaClient) CreateFlashcard(ctx context.Context, article stri
 			return nil, err
 		}
 		description = summary.Extract
+		thumbnail = summary.Thumbnail
 	}
 	return &Flashcard{
 		Header:      header,
 		Description: description,
 		Origin:      fmt.Sprintf(FWikipediaPageMarkdown, article),
+		Thumbnail: thumbnail,
 	}, nil
 }
 
