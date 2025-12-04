@@ -13,6 +13,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/ohhfishal/fishy/flashcard"
+	"github.com/ohhfishal/fishy/notify"
 	konghelp "github.com/ohhfishal/kong-help"
 )
 
@@ -21,6 +22,7 @@ var ErrDone = errors.New("program ready to exit")
 type Cmd struct {
 	LogConfig LogConfig             `embed:"" group:"Logging Flags:"`
 	Generate  flashcard.GenerateCMD `cmd:"" default:"withargs" help:"Generate all flashcards."`
+	Notify  notify.NotifyCMD `cmd:"" help:"Use generated flashcards to notify."`
 }
 
 func main() {

@@ -3,8 +3,9 @@ package flashcard
 import (
 	"bytes"
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
+	"os"
 	"github.com/goccy/go-yaml"
 	"io"
 	"log/slog"
@@ -12,6 +13,7 @@ import (
 
 type GenerateCMD struct {
 	File       []byte         `arg:"" type:"filecontent" help:"YAML file describing terms to make flashcards of."`
+	Output string `short:"o" default:"out.fish" type:"path" help:"File to write to."`
 	Flashcards FlashcardsArgs `embed:""`
 }
 
@@ -63,11 +65,26 @@ func (config *GenerateCMD) Run(ctx context.Context, logger *slog.Logger) error {
 			}
 		}
 	}
-	// TODO: Have this save them somewhere
-	slog.Info("created flashcards", "flashcards", flashcards)
+
 	if len(errs) > 0 {
-		slog.Warn("got errors", "errs", errors.Join(errs...))
+		msgs := []string{}
+		for _, err := range errs {
+			msgs = append(msgs, err.Error())
+		}
+		slog.Warn("got errors", "errs", msgs)
 	}
+
+	// Write to file
+	file, err := os.OpenFile(config.Output, os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return fmt.Errorf("opening output file: %w", err)
+	}
+
+	encoder := json.NewEncoder(file)
+	if err := encoder.Encode(flashcards); err != nil {
+		return fmt.Errorf("writing to output: %w", err)
+	}
+
 
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -25,7 +26,9 @@ type WikipediaClient struct {
 
 func (client *WikipediaClient) CreateFlashcards(ctx context.Context, term Term) ([]Flashcard, error) {
 	if term.Wikipedia == "" {
-		return nil, fmt.Errorf("cannot use wikipedia for: %v", term)
+		return nil, fmt.Errorf("does not support wikipedia: %v", term)
+	} else if strings.Contains(term.Wikipedia, "#") {
+		return nil, fmt.Errorf("not implemented: headings: %s", term.Wikipedia)
 	}
 
 	response, err := client.Do("GET", fmt.Sprintf(FWikipediaSummaryLink, term.Wikipedia), nil)
