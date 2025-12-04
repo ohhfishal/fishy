@@ -75,6 +75,14 @@ func Embed(card flashcard.Flashcard, opts EmbedOptions) discord.Embed {
 			Value: ConvertToBullets(card.AIOverview),
 		})
 	}
+	var thumbnail discord.Image
+	if card.Thumbnail.Source != "" {
+		thumbnail = discord.Image{
+					URL: card.Thumbnail.Source,
+					Width: card.Thumbnail.Width,
+					Height: card.Thumbnail.Height,
+		}
+	}
 	return discord.Embed{
 		Content: strings.Join(opts.Mentions, " "),
 		Messages: []discord.Message{
@@ -86,11 +94,7 @@ func Embed(card flashcard.Flashcard, opts EmbedOptions) discord.Embed {
 				Footer: discord.Footer{
 					Text: fmt.Sprintf("fishy %s • %s", version.Version(), version.Repo),
 				},
-				Thumbnail: discord.Image{
-					URL: card.Thumbnail.Source,
-					Width: card.Thumbnail.Width,
-					Height: card.Thumbnail.Height,
-				},
+				Image: thumbnail,
 			},
 		},
 	}

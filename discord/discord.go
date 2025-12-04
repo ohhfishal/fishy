@@ -35,7 +35,7 @@ type Message struct {
 	Fields      []Field `json:"fields,omitempty"`
 	Footer      Footer  `json:"footer,omitzero"`
 	Author      Author  `json:"author,omitzero"`
-	Thumbnail Image `json:"thumbnail,omitzero"`
+	Image Image `json:"image,omitzero"`
 }
 
 type Image struct {
