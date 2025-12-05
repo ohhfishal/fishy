@@ -23,12 +23,6 @@ type WikipediaSummaryResponse struct {
 	Thumbnail Image  `json:"thumbnail"`
 }
 
-type Image struct {
-	Source string `json:"source"`
-	Width  int    `json:"width"`
-	Height int    `json:"height"`
-}
-
 type WikipediaClient struct {
 	Contact string
 }

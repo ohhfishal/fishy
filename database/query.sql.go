@@ -7,6 +7,8 @@ package database
 
 import (
 	"context"
+
+	"github.com/ohhfishal/fishy/flashcard"
 )
 
 const getLastJob = `-- name: GetLastJob :many
@@ -36,6 +38,48 @@ func (q *Queries) GetLastJob(ctx context.Context) ([]Job, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertCard = `-- name: InsertCard :one
+INSERT INTO flashcards (
+  header,
+  description,
+  origin,
+  class_context,
+  ai_overview,
+  thumbnail
+) values (?, ?, ?, ?, ?, ?)
+RETURNING header, description, origin, class_context, ai_overview, thumbnail
+`
+
+type InsertCardParams struct {
+	Header       string          `json:"header"`
+	Description  string          `json:"description"`
+	Origin       string          `json:"origin"`
+	ClassContext string          `json:"class_context"`
+	AiOverview   StringArray     `json:"ai_overview"`
+	Thumbnail    flashcard.Image `json:"thumbnail"`
+}
+
+func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) (Flashcard, error) {
+	row := q.db.QueryRowContext(ctx, insertCard,
+		arg.Header,
+		arg.Description,
+		arg.Origin,
+		arg.ClassContext,
+		arg.AiOverview,
+		arg.Thumbnail,
+	)
+	var i Flashcard
+	err := row.Scan(
+		&i.Header,
+		&i.Description,
+		&i.Origin,
+		&i.ClassContext,
+		&i.AiOverview,
+		&i.Thumbnail,
+	)
+	return i, err
 }
 
 const metrics = `-- name: Metrics :one

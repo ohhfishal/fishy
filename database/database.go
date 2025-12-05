@@ -4,14 +4,22 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"encoding/json"
 	"fmt"
+	"github.com/ohhfishal/fishy/flashcard"
 	_ "modernc.org/sqlite"
+	"os"
 )
 
 //go:embed schema.sql
 var schema string
 
-func Connect(ctx context.Context, driver string, connection string) (*Queries, error) {
+type Store struct {
+	*Queries
+	db *sql.DB
+}
+
+func Connect(ctx context.Context, driver string, connection string) (*Store, error) {
 	db, err := sql.Open(driver, connection)
 	if err != nil {
 		return nil, fmt.Errorf("opening connection: %w", err)
@@ -20,7 +28,10 @@ func Connect(ctx context.Context, driver string, connection string) (*Queries, e
 	if err := RunMigrations(ctx, db); err != nil {
 		return nil, fmt.Errorf("running migrations: %w", err)
 	}
-	return New(db), nil
+	return &Store{
+		Queries: New(db),
+		db:      db,
+	}, nil
 }
 
 func RunMigrations(ctx context.Context, db DBTX) error {
@@ -28,4 +39,42 @@ func RunMigrations(ctx context.Context, db DBTX) error {
 		return err
 	}
 	return nil
+}
+
+func (store *Store) LoadFlashcards(ctx context.Context, cards []flashcard.Flashcard) error {
+	tx, err := store.db.Begin()
+	if err != nil {
+		return fmt.Errorf("starting transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	qtx := store.WithTx(tx)
+	for _, card := range cards {
+		if _, err := qtx.InsertCard(ctx, InsertCardParams{
+			Header:       card.Header,
+			Description:  card.Description,
+			Origin:       card.Origin,
+			ClassContext: card.ClassContext,
+			AiOverview:   card.AIOverview,
+			Thumbnail:    card.Thumbnail,
+		}); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (store *Store) LoadFlashcardsFrom(ctx context.Context, filepath string) error {
+	file, err := os.Open(filepath)
+	if err != nil {
+		return fmt.Errorf("opening file: %w", err)
+	}
+	defer file.Close()
+
+	var flashcards []flashcard.Flashcard
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&flashcards); err != nil {
+		return fmt.Errorf("parsing file: %w", err)
+	}
+	return store.LoadFlashcards(ctx, flashcards)
 }

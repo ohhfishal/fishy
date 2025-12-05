@@ -18,6 +18,5 @@ sql:
               # pointer: true
           - column: "flashcards.ai_overview"
             go_type:
-              type: "[]string"
-              # import: "github.com/ohhfishal/fishy/flashcard"
+              type: "StringArray"
               # pointer: true

@@ -36,7 +36,10 @@ func (config *ServerConfig) Run(ctx context.Context, logger *slog.Logger) error 
 	}
 
 	if path := config.CardFile; path != "" {
-		logger.Warn("implement card loading", "file", path)
+		if err := db.LoadFlashcardsFrom(ctx, config.CardFile); err != nil {
+			return fmt.Errorf("failed to load cards: %w", err)
+		}
+		logger.Info("loaded cards")
 	}
 
 	metrics, err := db.Metrics(ctx)

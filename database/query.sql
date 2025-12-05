@@ -9,6 +9,17 @@ INSERT INTO jobs (
 ) values (?) 
 RETURNING *;
 
+-- name: InsertCard :one
+INSERT INTO flashcards (
+  header,
+  description,
+  origin,
+  class_context,
+  ai_overview,
+  thumbnail
+) values (?, ?, ?, ?, ?, ?)
+RETURNING *;
+
 -- name: Metrics :one
 SELECT
   (SELECT COUNT(*) FROM jobs) as jobs,
