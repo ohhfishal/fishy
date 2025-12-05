@@ -78,9 +78,9 @@ func Embed(card flashcard.Flashcard, opts EmbedOptions) discord.Embed {
 	var thumbnail discord.Image
 	if card.Thumbnail.Source != "" {
 		thumbnail = discord.Image{
-					URL: card.Thumbnail.Source,
-					Width: card.Thumbnail.Width,
-					Height: card.Thumbnail.Height,
+			URL:    card.Thumbnail.Source,
+			Width:  card.Thumbnail.Width,
+			Height: card.Thumbnail.Height,
 		}
 	}
 	return discord.Embed{

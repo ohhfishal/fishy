@@ -2,6 +2,8 @@
 
 {
   packages = with pkgs;[
+    sqlc
+    just
     yq
   ];
 }

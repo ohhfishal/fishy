@@ -17,16 +17,16 @@ const (
 )
 
 type WikipediaSummaryResponse struct {
-	Language string `json:"lang"`
-	Title    string `json:"title"`
-	Extract  string `json:"extract"`
-	Thumbnail Image `json:"thumbnail"`
+	Language  string `json:"lang"`
+	Title     string `json:"title"`
+	Extract   string `json:"extract"`
+	Thumbnail Image  `json:"thumbnail"`
 }
 
 type Image struct {
 	Source string `json:"source"`
-	Width int `json:"width"`
-	Height int `json:"height"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
 }
 
 type WikipediaClient struct {
@@ -68,7 +68,7 @@ func (client *WikipediaClient) CreateFlashcard(ctx context.Context, article stri
 		Header:      header,
 		Description: description,
 		Origin:      fmt.Sprintf(FWikipediaPageMarkdown, article),
-		Thumbnail: thumbnail,
+		Thumbnail:   thumbnail,
 	}, nil
 }
 

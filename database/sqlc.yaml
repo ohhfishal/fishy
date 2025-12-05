@@ -1,0 +1,23 @@
+version: "2"
+sql:
+  - engine: "sqlite"
+    queries: "query.sql"
+    schema: "schema.sql"
+    gen:
+      go:
+        emit_json_tags: true
+        emit_enum_valid_method: true
+        package: "database"
+        out: "."
+        overrides:
+          # NOTE: Types must implement interfaces database/sql/driver and sql.Scanner
+          - column: "flashcards.thumbnail"
+            go_type:
+              type: "Image"
+              import: "github.com/ohhfishal/fishy/flashcard"
+              # pointer: true
+          - column: "flashcards.ai_overview"
+            go_type:
+              type: "[]string"
+              # import: "github.com/ohhfishal/fishy/flashcard"
+              # pointer: true

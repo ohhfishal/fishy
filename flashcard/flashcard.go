@@ -15,7 +15,7 @@ type Flashcard struct {
 	AIOverview   []string `json:"ai_overview,omitempty"`
 	Origin       string   `json:"origin"`
 	ClassContext string   `json:"class_context"`
-	Thumbnail Image `json:"thumbnail"`
+	Thumbnail    Image    `json:"thumbnail"`
 }
 
 type FlashcardsArgs struct {

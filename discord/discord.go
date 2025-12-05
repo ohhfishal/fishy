@@ -35,13 +35,13 @@ type Message struct {
 	Fields      []Field `json:"fields,omitempty"`
 	Footer      Footer  `json:"footer,omitzero"`
 	Author      Author  `json:"author,omitzero"`
-	Image Image `json:"image,omitzero"`
+	Image       Image   `json:"image,omitzero"`
 }
 
 type Image struct {
-	URL string `json:"url"`
-	Height int `json:"height,omitzero"`
-	Width int `json:"width,omitzero"`
+	URL    string `json:"url"`
+	Height int    `json:"height,omitzero"`
+	Width  int    `json:"width,omitzero"`
 }
 
 type Field struct {

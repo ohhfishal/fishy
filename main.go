@@ -24,7 +24,7 @@ type Cmd struct {
 	LogConfig LogConfig             `embed:"" group:"Logging Flags:"`
 	Generate  flashcard.GenerateCMD `cmd:"" default:"withargs" help:"Generate all flashcards."`
 	Notify    notify.NotifyCMD      `cmd:"" help:"Use generated flashcards to notify."`
-	Serve serve.CMD `cmd:"" help:"Run as a server to periodically send notifications."`
+	Serve     serve.CMD             `cmd:"" help:"Run as a server to periodically send notifications."`
 }
 
 func main() {
