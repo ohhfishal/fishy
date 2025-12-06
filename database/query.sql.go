@@ -11,6 +11,40 @@ import (
 	"github.com/ohhfishal/fishy/flashcard"
 )
 
+const getCards = `-- name: GetCards :many
+SELECT header, description, origin, class_context, ai_overview, thumbnail FROM flashcards
+`
+
+func (q *Queries) GetCards(ctx context.Context) ([]Flashcard, error) {
+	rows, err := q.db.QueryContext(ctx, getCards)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Flashcard
+	for rows.Next() {
+		var i Flashcard
+		if err := rows.Scan(
+			&i.Header,
+			&i.Description,
+			&i.Origin,
+			&i.ClassContext,
+			&i.AiOverview,
+			&i.Thumbnail,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLastJob = `-- name: GetLastJob :many
 SELECT id, created_at, failures FROM jobs
 ORDER BY created_at DESC

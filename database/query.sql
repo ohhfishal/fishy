@@ -9,6 +9,9 @@ INSERT INTO jobs (
 ) values (?) 
 RETURNING *;
 
+-- name: GetCards :many
+SELECT * FROM flashcards;
+
 -- name: InsertCard :one
 INSERT INTO flashcards (
   header,

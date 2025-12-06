@@ -78,3 +78,16 @@ func (store *Store) LoadFlashcardsFrom(ctx context.Context, filepath string) err
 	}
 	return store.LoadFlashcards(ctx, flashcards)
 }
+
+// NOTE: This funcction must always work or there is a bug in our types
+func ConvertFlashcard(oldCard Flashcard) flashcard.Flashcard {
+	bytes, err := json.Marshal(oldCard)
+	if err != nil {
+		panic(err)
+	}
+	var newCard flashcard.Flashcard
+	if err := json.Unmarshal(bytes, &newCard); err != nil {
+		panic(err)
+	}
+	return newCard
+}

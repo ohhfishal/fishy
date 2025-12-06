@@ -6,6 +6,7 @@ import (
 	"github.com/ohhfishal/fishy/database"
 	"github.com/ohhfishal/fishy/notify"
 	"log/slog"
+	"math/rand"
 	"time"
 )
 
@@ -50,7 +51,8 @@ func (config *ServerConfig) Run(ctx context.Context, logger *slog.Logger) error 
 
 	ticker := time.NewTicker(config.Heartbeat)
 
-	// TODO: Go handle any jobs
+	// Handle any jobs that are ready to run
+	config.Work(ctx, db, logger)
 
 	slog.Info("starting event loop")
 	for {
@@ -60,7 +62,53 @@ func (config *ServerConfig) Run(ctx context.Context, logger *slog.Logger) error 
 			return nil
 		case _ = <-ticker.C:
 			slog.Info("beat")
+			go config.Work(ctx, db, logger)
 			// TODO: Put jobs on the queue
 		}
 	}
+}
+
+func (config *ServerConfig) Work(ctx context.Context, db *database.Store, logger *slog.Logger) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	logger = logger.With("job", "work")
+	if err := config.work(ctx, db, logger); err != nil {
+		logger.Error("error doing work", "err", err)
+	}
+}
+func (config *ServerConfig) work(ctx context.Context, db *database.Store, logger *slog.Logger) error {
+	// TODO: This function should lock via mutex but I assume it is only running once due to timeout
+	jobs, err := db.GetLastJob(ctx)
+	if err != nil {
+		return fmt.Errorf("getting last job: %w", err)
+	}
+	if len(jobs) >= 1 && time.Since(jobs[0].CreatedAt) < config.Interval {
+		return nil
+	}
+	// TODO: Roll the probailtiy and see if we skip and insert a failure job
+	// Pick a card.
+	cards, err := db.GetCards(ctx)
+	if err != nil {
+		return fmt.Errorf("getting cards: %w", err)
+	}
+
+	// Do the notification stuff
+	selected := database.ConvertFlashcard(cards[rand.Int()%len(cards)])
+	embed := notify.Embed(selected, config.EmbedOptions)
+	slog.Info("sending", "embed", embed)
+	if err := embed.Post(config.Webhook); err != nil {
+		return fmt.Errorf("could not post embed: %v: %w", embed, err)
+	}
+
+	// Put a new job
+	// TODO: We don't want this operation to timeout
+	job, err := db.PutJob(context.TODO(), 0)
+	if err != nil {
+		// This one is really bad since we might start thrashing and always send response
+		return fmt.Errorf("inserting job", "err", err)
+	}
+	slog.Info("inserted", "job", job)
+	return nil
+
 }
