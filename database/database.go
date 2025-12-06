@@ -41,14 +41,15 @@ func RunMigrations(ctx context.Context, db DBTX) error {
 	return nil
 }
 
-func (store *Store) LoadFlashcards(ctx context.Context, cards []flashcard.Flashcard) error {
+func (store *Store) LoadFlashcards(ctx context.Context, cards []flashcard.Flashcard) (int, error) {
 	tx, err := store.db.Begin()
 	if err != nil {
-		return fmt.Errorf("starting transaction: %w", err)
+		return -1, fmt.Errorf("starting transaction: %w", err)
 	}
 	defer tx.Rollback()
 
 	qtx := store.WithTx(tx)
+	i := 0
 	for _, card := range cards {
 		if _, err := qtx.InsertCard(ctx, InsertCardParams{
 			Header:       card.Header,
@@ -58,23 +59,24 @@ func (store *Store) LoadFlashcards(ctx context.Context, cards []flashcard.Flashc
 			AiOverview:   card.AIOverview,
 			Thumbnail:    card.Thumbnail,
 		}); err != nil {
-			return err
+			return -1, err
 		}
+		i++
 	}
-	return tx.Commit()
+	return i, tx.Commit()
 }
 
-func (store *Store) LoadFlashcardsFrom(ctx context.Context, filepath string) error {
+func (store *Store) LoadFlashcardsFrom(ctx context.Context, filepath string) (int, error) {
 	file, err := os.Open(filepath)
 	if err != nil {
-		return fmt.Errorf("opening file: %w", err)
+		return -1, fmt.Errorf("opening file: %w", err)
 	}
 	defer file.Close()
 
 	var flashcards []flashcard.Flashcard
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&flashcards); err != nil {
-		return fmt.Errorf("parsing file: %w", err)
+		return -1, fmt.Errorf("parsing file: %w", err)
 	}
 	return store.LoadFlashcards(ctx, flashcards)
 }

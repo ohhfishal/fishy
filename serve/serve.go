@@ -2,6 +2,7 @@ package serve
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ohhfishal/fishy/database"
 	"github.com/ohhfishal/fishy/notify"
@@ -9,6 +10,8 @@ import (
 	"math/rand"
 	"time"
 )
+
+var ErrSkip = errors.New("no work to do")
 
 type CMD struct {
 	Config ServerConfig `embed:"" group:"Server Config"`
@@ -18,12 +21,11 @@ type ServerConfig struct {
 	Webhook      string              `arg:"" required:"" help:"Discord webhook to send message to."`
 	Database     string              `arg:"" default:"fishy.db" help:"SQLite connection string."`
 	EmbedOptions notify.EmbedOptions `embed:""`
-
-	CardFile    string        `name:"load" short:"l" type:"existingfile" help:"Generated flashcard file to load in. Ignores duplicates."`
-	Interval    time.Duration `default:"15m" help:"Minimum duration between notifications."`
-	Heartbeat   time.Duration `default:"1m" help:"Duration between checks if there is work to be done."`
-	Probability float64       `default:"0.50" help:"Starting probability a notification is send after interval."`
-	Delta       float64       `default:"0.1" help:"Delta added to probability on failure to trigger."`
+	CardFile     string              `name:"load" short:"l" type:"existingfile" help:"Generated flashcard file to load in. Ignores duplicates."`
+	Interval     time.Duration       `default:"15m" help:"Minimum duration between notifications."`
+	Heartbeat    time.Duration       `default:"1m" help:"Duration between checks if there is work to be done."`
+	Probability  float64             `default:"0.50" help:"Starting probability a notification is send after interval."`
+	Delta        float64             `default:"0.1" help:"Delta added to probability on failure to trigger."`
 }
 
 func (cmd *CMD) Run(ctx context.Context, logger *slog.Logger) error {
@@ -37,10 +39,11 @@ func (config *ServerConfig) Run(ctx context.Context, logger *slog.Logger) error 
 	}
 
 	if path := config.CardFile; path != "" {
-		if err := db.LoadFlashcardsFrom(ctx, config.CardFile); err != nil {
+		if results, err := db.LoadFlashcardsFrom(ctx, config.CardFile); err != nil {
 			return fmt.Errorf("failed to load cards: %w", err)
+		} else {
+			logger.Info("loaded cards", "cards", results)
 		}
-		logger.Info("loaded cards")
 	}
 
 	metrics, err := db.Metrics(ctx)
@@ -52,7 +55,7 @@ func (config *ServerConfig) Run(ctx context.Context, logger *slog.Logger) error 
 	ticker := time.NewTicker(config.Heartbeat)
 
 	// Handle any jobs that are ready to run
-	config.Work(ctx, db, logger)
+	config.TickIfReady(ctx, db, logger)
 
 	slog.Info("starting event loop")
 	for {
@@ -61,32 +64,28 @@ func (config *ServerConfig) Run(ctx context.Context, logger *slog.Logger) error 
 			slog.Info("shutting down", "reason", ctx.Err().Error())
 			return nil
 		case _ = <-ticker.C:
-			slog.Info("beat")
-			go config.Work(ctx, db, logger)
-			// TODO: Put jobs on the queue
+			go config.TickIfReady(ctx, db, logger)
 		}
 	}
 }
 
-func (config *ServerConfig) Work(ctx context.Context, db *database.Store, logger *slog.Logger) {
+func (config *ServerConfig) TickIfReady(ctx context.Context, db *database.Store, logger *slog.Logger) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-
 	logger = logger.With("job", "work")
-	if err := config.work(ctx, db, logger); err != nil {
+
+	if err := config.ready(ctx, db, logger); err != nil {
+		if !errors.Is(ErrSkip, err) {
+			logger.Error("determining if ready", "err", err)
+		}
+		return
+	}
+
+	if err := config.Tick(ctx, db, logger); err != nil {
 		logger.Error("error doing work", "err", err)
 	}
 }
-func (config *ServerConfig) work(ctx context.Context, db *database.Store, logger *slog.Logger) error {
-	// TODO: This function should lock via mutex but I assume it is only running once due to timeout
-	jobs, err := db.GetLastJob(ctx)
-	if err != nil {
-		return fmt.Errorf("getting last job: %w", err)
-	}
-	if len(jobs) >= 1 && time.Since(jobs[0].CreatedAt) < config.Interval {
-		return nil
-	}
-	// TODO: Roll the probailtiy and see if we skip and insert a failure job
+func (config *ServerConfig) Tick(ctx context.Context, db *database.Store, logger *slog.Logger) error {
 	// Pick a card.
 	cards, err := db.GetCards(ctx)
 	if err != nil {
@@ -96,7 +95,6 @@ func (config *ServerConfig) work(ctx context.Context, db *database.Store, logger
 	// Do the notification stuff
 	selected := database.ConvertFlashcard(cards[rand.Int()%len(cards)])
 	embed := notify.Embed(selected, config.EmbedOptions)
-	slog.Info("sending", "embed", embed)
 	if err := embed.Post(config.Webhook); err != nil {
 		return fmt.Errorf("could not post embed: %v: %w", embed, err)
 	}
@@ -108,7 +106,37 @@ func (config *ServerConfig) work(ctx context.Context, db *database.Store, logger
 		// This one is really bad since we might start thrashing and always send response
 		return fmt.Errorf("inserting job", "err", err)
 	}
-	slog.Info("inserted", "job", job)
+	logger.Info("inserted", "job", job)
 	return nil
+}
 
+// Return nil: Ready, ErrSkip: Not Ready, Err: Actual error
+func (config *ServerConfig) ready(ctx context.Context, db *database.Store, logger *slog.Logger) error {
+	jobs, err := db.GetLastJob(ctx)
+	if err != nil {
+		return fmt.Errorf("getting last job: %w", err)
+	} else if len(jobs) == 0 {
+		return nil
+	}
+
+	job := jobs[0]
+	if time.Since(job.CreatedAt) < config.Interval {
+		logger.Debug("not ready (time)")
+		return ErrSkip
+	}
+
+	target := config.Probability + (config.Delta * float64(job.Failures))
+	roll := rand.Float64()
+	logger.Info("rolling", "target", target, "roll", roll, "status", roll >= target, "job", job)
+	if roll >= target {
+		return nil
+	}
+
+	// Log that we failed
+	// TODO: We don't want this operation to timeout
+	_, err = db.PutJob(context.TODO(), job.Failures+1)
+	if err != nil {
+		return err
+	}
+	return ErrSkip
 }
